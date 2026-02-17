@@ -14,18 +14,18 @@ grid = [
     [0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,2,0,0,0,0,3,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0,0,0],
+    [0,0,2,0,0,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0,0,0],
     [0,0,0,0,0,1,0,1,0,0,0,0],
     [0,0,0,0,0,1,0,1,0,0,0,0],
-    [0,0,0,0,0,1,1,1,0,0,0,0],
+    [0,0,0,0,0,1,1,1,3,0,0,0],
     [0,0,0,0,0,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0]
 ]
 
 start_pos = (5, 2)
-target_pos = (5, 7)
+target_pos = (9, 8)
 
 directions = [
     (-1, 0),  # Up
@@ -45,12 +45,13 @@ def get_valid_neighbors(position, grid_matrix):
             neighbors.append((new_row, new_col))
     return neighbors
 
-def dls_step(grid_matrix, start_node, goal_node, limit, fig_ax, parent_map):
-    """One depth-limited DFS run using the given figure/axis."""
+def dls_visual(grid_matrix, start_node, goal_node, limit):
+    """Depth-Limited Search with GUI visualization (no terminal messages)."""
+    fig, ax = plt.subplots()
+    plt.ion()
     stack = [(start_node, 0)]
     visited_nodes = set()
-    
-    fig, ax = fig_ax
+    parent_map = {}
 
     while stack:
         current, depth = stack.pop()
@@ -65,7 +66,7 @@ def dls_step(grid_matrix, start_node, goal_node, limit, fig_ax, parent_map):
                 for c in range(len(grid_matrix[0])):
                     if grid_matrix[r][c] in (4, 5):
                         grid_matrix[r][c] = EMPTY
-
+            # Draw final path
             path = []
             node = goal_node
             while node != start_node:
@@ -73,7 +74,15 @@ def dls_step(grid_matrix, start_node, goal_node, limit, fig_ax, parent_map):
                 node = parent_map[node]
             path.append(start_node)
             path.reverse()
-            return path
+            for step in path:
+                if step != start_node and step != goal_node:
+                    grid_matrix[step[0]][step[1]] = 5
+                ax.clear()
+                ax.imshow(grid_matrix, cmap=cmap)
+                plt.pause(0.1)
+            plt.ioff()
+            plt.show()
+            return
 
         if depth < limit:
             for neighbor in get_valid_neighbors(current, grid_matrix):
@@ -84,33 +93,10 @@ def dls_step(grid_matrix, start_node, goal_node, limit, fig_ax, parent_map):
         ax.clear()
         ax.imshow(grid_matrix, cmap=cmap)
         plt.pause(0.05)
-    return None
 
-def ids_visual(grid_matrix, start_node, goal_node, max_depth=20):
-    fig, ax = plt.subplots()
-    plt.ion()
-    parent_map = {}
-    
-    for depth in range(max_depth):
-        # Reset explored cells for each iteration but keep figure
-        temp_grid = [row.copy() for row in grid_matrix]
-        path = dls_step(temp_grid, start_node, goal_node, depth, (fig, ax), parent_map)
-        if path:
-            print(f"Path found at depth {depth}")
-            # Draw final path
-            for step in path:
-                if step != start_node and step != goal_node:
-                    temp_grid[step[0]][step[1]] = 5
-                ax.clear()
-                ax.imshow(temp_grid, cmap=cmap)
-                plt.pause(0.1)
-            plt.ioff()
-            plt.show()
-            return path
-    print("No path found within max depth")
     plt.ioff()
     plt.show()
-    return None
+    return
 
-# Run IDS
-ids_visual(grid, start_pos, target_pos)
+depth_limit = int(input("Enter depth limit for DLS: "))
+dls_visual(grid, start_pos, target_pos, depth_limit)
