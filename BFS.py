@@ -1,17 +1,16 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from collections import deque
-import time
 
-# Grid legend
 EMPTY = 0
 WALL = 1
 START = 2
 TARGET = 3
 
-# Colors
-cmap = mcolors.ListedColormap(['white', 'black', 'cyan', 'magenta', 'yellow', 'green'])
-# 0: empty, 1: wall, 2: start, 3: target, 4: explored, 5: frontier
+cmap = mcolors.ListedColormap(
+    ['white', 'black', 'cyan', 'magenta', 'yellow', 'green']
+)
+
 grid = [
 [2,0,0,0,0,0,1,0,0,0,0,0],
 [0,0,0,0,0,0,1,0,0,0,0,0],
@@ -27,78 +26,91 @@ grid = [
 [0,0,0,0,0,0,0,0,0,0,0,0]
 ]
 
+start_pos = (0, 0)
+target_pos = (9, 9)
 
-start = (0,0)
-target = (9,9)
 
-def get_neighbors(node, grid):
-    r, c = node
-    moves = [
-        (-1, 0),  # Up
-        (0, 1),   # Right
-        (1, 0),   # Bottom
-        (1, 1),   # Bottom-Right
-        (0, -1),  # Left
-        (-1, -1)  # Top-Left
+def get_valid_neighbors(position, grid_matrix):
+    row, col = position
+    directions = [
+        (-1, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (0, -1),
+        (-1, -1)
     ]
-    neighbors = []
-    for dr, dc in moves:
-        nr, nc = r + dr, c + dc
-        if 0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and grid[nr][nc] != WALL:
-            neighbors.append((nr, nc))
-    return neighbors
-def bfs_visual(grid, start, target):
-    frontier = deque([start])
-    explored = set()
-    parent = {}
 
-    fig, ax = plt.subplots()
+    valid_neighbors = []
+
+    for d_row, d_col in directions:
+        new_row = row + d_row
+        new_col = col + d_col
+
+        if (
+            0 <= new_row < len(grid_matrix)
+            and 0 <= new_col < len(grid_matrix[0])
+            and grid_matrix[new_row][new_col] != WALL
+        ):
+            valid_neighbors.append((new_row, new_col))
+
+    return valid_neighbors
+
+
+def bfs_visual(grid_matrix, start_node, goal_node):
+    frontier_queue = deque([start_node])
+    visited_nodes = set()
+    parent_map = {}
+
+    figure, axis = plt.subplots()
     plt.ion()
 
-    while frontier:
-        current = frontier.popleft()
-        explored.add(current)
+    while frontier_queue:
+        current_node = frontier_queue.popleft()
+        visited_nodes.add(current_node)
 
-        # Mark explored
-        if current != start and current != target:
-            grid[current[0]][current[1]] = 4  # explored
+        if current_node != start_node and current_node != goal_node:
+            grid_matrix[current_node[0]][current_node[1]] = 4
 
-        # Check for target
-        if current == target:
-            # Reset grid (remove explored & frontier colors)
-            for r in range(len(grid)):
-                for c in range(len(grid[0])):
-                    if grid[r][c] == 4 or grid[r][c] == 5:
-                        grid[r][c] = EMPTY
-
+        if current_node == goal_node:
+            for r in range(len(grid_matrix)):
+                for c in range(len(grid_matrix[0])):
+                    if grid_matrix[r][c] == 4 or grid_matrix[r][c] == 5:
+                        grid_matrix[r][c] = EMPTY
 
             path = []
-            node = target
-            while node != start:
+            node = goal_node
+
+            while node != start_node:
                 path.append(node)
-                node = parent[node]
-            path.append(start)
+                node = parent_map[node]
+
+            path.append(start_node)
             path.reverse()
-            for node in path:
-                if node != start and node != target:
-                    grid[node[0]][node[1]] = 5  # final path
-                ax.clear()
-                ax.imshow(grid, cmap=cmap)
+
+            for step in path:
+                if step != start_node and step != goal_node:
+                    grid_matrix[step[0]][step[1]] = 5
+
+                axis.clear()
+                axis.imshow(grid_matrix, cmap=cmap)
                 plt.pause(0.1)
+
             plt.ioff()
             plt.show()
             return path
 
-        for neighbor in get_neighbors(current, grid):
-            if neighbor not in explored and neighbor not in frontier:
-                parent[neighbor] = current
-                frontier.append(neighbor)
-                # Mark frontier for visualization
-                if neighbor != target:
-                    grid[neighbor[0]][neighbor[1]] = 5
-        # Update plot
-        ax.clear()
-        ax.imshow(grid, cmap=cmap)
+        for neighbor in get_valid_neighbors(current_node, grid_matrix):
+            if neighbor not in visited_nodes and neighbor not in frontier_queue:
+                parent_map[neighbor] = current_node
+                frontier_queue.append(neighbor)
+
+                if neighbor != goal_node:
+                    grid_matrix[neighbor[0]][neighbor[1]] = 5
+
+        axis.clear()
+        axis.imshow(grid_matrix, cmap=cmap)
         plt.pause(0.2)
 
-bfs_visual(grid, start, target)
+
+bfs_visual(grid, start_pos, target_pos)
